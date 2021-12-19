@@ -69,7 +69,16 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return MaterialApp(
         home: Scaffold(
-          backgroundColor: Colors.grey[900],
+            backgroundColor: Colors.grey[900],
+            floatingActionButton: FloatingActionButton(
+              backgroundColor: Colors.amberAccent[700],
+              onPressed: () => scanBarcodeNormal(),
+              child: const Icon(
+                Icons.qr_code,
+                color: Colors.black,
+              ),
+            ),
+            floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
             appBar: AppBar(
                 title: const Text('Barcode scan'),
               backgroundColor: Colors.black,
@@ -81,27 +90,15 @@ class _HomeState extends State<Home> {
                       direction: Axis.vertical,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                                primary: Colors.amberAccent[700],
-                                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
-                            ),
-                            onPressed: () => scanBarcodeNormal(),
-                            child: Text(
-                              'Start barcode scan',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.black,
-                                  fontWeight: FontWeight.bold
-                              ),
-                            )),
                         Text('Scan result : $_scanBarcode\n',
                             style: TextStyle(
                                 fontSize: 20,
                                 color: Colors.white,
                             )
                         )
-                      ]));
+                      ]
+                  )
+              );
             })));
   }
 }
