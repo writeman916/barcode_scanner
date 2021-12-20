@@ -35,21 +35,21 @@ class ProductDatabase {
     ${ProductFields.productName} $textType,
     ${ProductFields.productPrice} $integerType,
     ${ProductFields.note} $textType,
-    ${ProductFields.createdTime} $textType,    
+    ${ProductFields.createdTime} $textType    
     )
     ''');
   }
   Future<Product> create(Product product) async {
     final db = await instance.database;
 
-    final json = product.toJson();
-    final columns =
-        '${ProductFields.code}, ${ProductFields.productName}, ${ProductFields.productPrice}, ${ProductFields.note}, ${ProductFields.createdTime}';
-    final values =
-        '${json[ProductFields.code]}, ${json[ProductFields.productName]}, ${json[ProductFields.productPrice]}, ${json[ProductFields.note]}, ${json[ProductFields.createdTime]}';
+     final json = product.toJson();
+     final columns =
+         '${ProductFields.code}, ${ProductFields.productName}, ${ProductFields.productPrice}, ${ProductFields.note}, ${ProductFields.createdTime}';
+     final values =
+         "'${json[ProductFields.code]}', '${json[ProductFields.productName]}', ${json[ProductFields.productPrice]}, '${json[ProductFields.note]}', '${json[ProductFields.createdTime]}'";
 
-    final id = await db.
-    rawInsert('INSERT INTO table_name ($columns) VALUES ($values)');
+     final id = await db.
+     rawInsert('INSERT INTO $tableProducts ($columns) VALUES ($values)');
 
     //final id =  await db.insert(tableProducts, product.toJson());
 

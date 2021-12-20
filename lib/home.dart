@@ -1,8 +1,12 @@
 import 'dart:async';
 
+import 'package:barcode_scanner/database/products_database.dart';
+import 'package:barcode_scanner/model/product.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:intl/intl.dart';
+
 
 class Home extends StatefulWidget{
 
@@ -12,6 +16,11 @@ class Home extends StatefulWidget{
 
 class _HomeState extends State<Home> {
   String _scanBarcode = 'Unknown';
+
+  bool isLoading = false;
+  late List<Product> products = [
+    Product(code: '012334968', productName: 'productName', productPrice: 9000, createdTime: getCurrentDate())
+  ];
 
   createAlertDialog(BuildContext context, scanResult){
     TextEditingController customController = TextEditingController();
@@ -65,6 +74,49 @@ class _HomeState extends State<Home> {
     });
   }
 
+  returnString2Text() {
+    createAlertDialog(context, 123456789);
+
+    ProductDatabase.instance.create(
+      Product(code:'123456789', productName: 'CocaCola', note: '12314', productPrice: 10000,createdTime: getCurrentDate())
+    );
+    refreshProducts();
+
+    setState(() {
+      _scanBarcode = '123456789';
+    });
+  }
+
+  String getCurrentDate(){
+
+    DateTime now = DateTime.now();
+    String formattedDate = DateFormat('MM/dd/yyyy').format(now);
+
+    return formattedDate;
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    refreshProducts();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    ProductDatabase.instance.close();
+    super.dispose();
+  }
+
+  Future refreshProducts() async {
+    setState(() => isLoading = true);
+    print(products.length);
+    this.products = await ProductDatabase.instance.readAllProducts();
+    print(products.length);
+    setState(() => isLoading = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -72,7 +124,8 @@ class _HomeState extends State<Home> {
             backgroundColor: Colors.grey[900],
             floatingActionButton: FloatingActionButton(
               backgroundColor: Colors.amberAccent[700],
-              onPressed: () => scanBarcodeNormal(),
+              // onPressed: () => scanBarcodeNormal(),
+              onPressed: () => returnString2Text(),
               child: const Icon(
                 Icons.qr_code,
                 color: Colors.black,
@@ -83,22 +136,33 @@ class _HomeState extends State<Home> {
                 title: const Text('Barcode scan'),
               backgroundColor: Colors.black,
             ),
-            body: Builder(builder: (BuildContext context) {
-              return Container(
-                  alignment: Alignment.center,
-                  child: Flex(
-                      direction: Axis.vertical,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Text('Scan result : $_scanBarcode\n',
-                            style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.white,
-                            )
-                        )
-                      ]
-                  )
-              );
-            })));
+            body: Center(
+              child: isLoading
+                  ? CircularProgressIndicator()
+                  : products.isEmpty
+                  ? Text(
+                'No Notes',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              )
+                  : buildProduct(),
+            ),
+        )
+    );
   }
+
+  Widget buildProduct() => ListView.builder(
+    itemCount:  products.length,
+    itemBuilder: (context, index){
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4.0),
+        child: Card(
+          child: ListTile(
+            onTap: () {
+            },
+            title: Text(products[index].productName.toString() + products[index].productPrice.toString()),
+          ),
+        ),
+      );
+    },
+  );
 }

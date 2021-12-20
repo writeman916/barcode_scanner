@@ -21,7 +21,7 @@ class Product {
   final String productName;
   final int productPrice;
   final String? note;
-  final DateTime createdTime;
+  final String createdTime;
 
   const Product({
     this.id,
@@ -38,7 +38,7 @@ class Product {
     String? productName,
     int? productPrice,
     String? note,
-    DateTime? createdTime,
+    String? createdTime,
   }) =>
       Product(
           id: id ?? this.id,
@@ -56,15 +56,15 @@ class Product {
         ProductFields.productName: productName,
         ProductFields.productPrice: productPrice,
         ProductFields.note: note,
-        ProductFields.createdTime: createdTime.toIso8601String(),
+        ProductFields.createdTime: createdTime,
       };
 
   static Product fromJson(Map<String, Object?> json) => Product(
     id: json[ProductFields.id] as int?,
-    code: json[ProductFields.code] as String,
-    productName: json[ProductFields.productName] as String,
+    code: json[ProductFields.code.toString()] as String,
+    productName: json[ProductFields.productName.toString()] as String,
     productPrice: json[ProductFields.productPrice] as int,
-    note: json[ProductFields.note] as String,
-    createdTime: DateTime.parse(json[ProductFields.createdTime] as String),
+    note: json[ProductFields.note.toString()] as String,
+    createdTime: json[ProductFields.createdTime.toString()] as String,
   );
 }
