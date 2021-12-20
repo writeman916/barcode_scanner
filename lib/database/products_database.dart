@@ -26,14 +26,14 @@ class ProductDatabase {
   Future _createDB(Database db, int version) async {
     final idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
     final textType = 'TEXT NOT NULL';
-    final integeType = 'INTEGER NOT NULL';
+    final integerType = 'INTEGER NOT NULL';
 
     await db.execute('''
     CREATE TABLE $tableProducts (
     ${ProductFields.id} $idType,
     ${ProductFields.code} $textType,
     ${ProductFields.productName} $textType,
-    ${ProductFields.productPrice} $integeType,
+    ${ProductFields.productPrice} $integerType,
     ${ProductFields.note} $textType,
     ${ProductFields.createdTime} $textType,    
     )
@@ -43,18 +43,66 @@ class ProductDatabase {
     final db = await instance.database;
 
     final json = product.toJson();
-    final colums =
+    final columns =
         '${ProductFields.code}, ${ProductFields.productName}, ${ProductFields.productPrice}, ${ProductFields.note}, ${ProductFields.createdTime}';
     final values =
         '${json[ProductFields.code]}, ${json[ProductFields.productName]}, ${json[ProductFields.productPrice]}, ${json[ProductFields.note]}, ${json[ProductFields.createdTime]}';
 
     final id = await db.
-    rawInsert('INSERT INTO table_name ($colums) VALUES ($values)');
+    rawInsert('INSERT INTO table_name ($columns) VALUES ($values)');
 
     //final id =  await db.insert(tableProducts, product.toJson());
 
     return product.copy(id: id);
   }
+
+  Future<Product?> readProduct(int id) async {
+    final db = await instance.database;
+
+    final maps = await db.query(
+      tableProducts,
+      columns: ProductFields.values,
+      where:  '${ProductFields.id} = ?',
+      whereArgs: [id],
+    );
+
+    if(maps.isNotEmpty) {
+      return Product.fromJson(maps.first);
+    } else {
+      return null;
+    }
+  }
+
+  Future<List<Product>> readAllProducts() async {
+    final db = await instance.database;
+
+    final orderBy = '${ProductFields.createdTime} ASC';
+    final result = await db.query(tableProducts, orderBy: orderBy);
+
+    return result.map((json) => Product.fromJson(json)).toList();
+  }
+
+  Future<int> update(Product product) async {
+    final db = await instance.database;
+
+    return db.update(
+      tableProducts,
+      product.toJson(),
+      where:  '$ProductFields.id} = ?',
+      whereArgs: [product.id],
+    );
+  }
+
+  Future<int> delete(int id) async {
+    final db = await instance.database;
+
+    return db.delete(
+      tableProducts,
+      where:  '$ProductFields.id} = ?',
+      whereArgs: [id],
+    );
+  }
+
   Future close() async {
     final db = await instance.database;
     db.close();

@@ -1,9 +1,16 @@
 final String tableProducts = 'Products';
+
+
 class ProductFields {
+
+  static final List<String> values = [
+    // Add all fields
+    id, code, productName, productPrice, note, createdTime
+  ];
   static final String id = '_id';
   static final String code = '_code';
   static final String productName = '_productName';
-  static final String productPrice = '_prodcutPrice';
+  static final String productPrice = '_productPrice';
   static final String note = '_note';
   static final String createdTime = '_createdTime';
 }
@@ -51,4 +58,13 @@ class Product {
         ProductFields.note: note,
         ProductFields.createdTime: createdTime.toIso8601String(),
       };
+
+  static Product fromJson(Map<String, Object?> json) => Product(
+    id: json[ProductFields.id] as int?,
+    code: json[ProductFields.code] as String,
+    productName: json[ProductFields.productName] as String,
+    productPrice: json[ProductFields.productPrice] as int,
+    note: json[ProductFields.note] as String,
+    createdTime: DateTime.parse(json[ProductFields.createdTime] as String),
+  );
 }
