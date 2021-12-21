@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:intl/intl.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
 
 
 class Home extends StatefulWidget{
@@ -15,41 +16,22 @@ class Home extends StatefulWidget{
 }
 
 class _HomeState extends State<Home> {
-  String _scanBarcode = 'Unknown';
-
+  final _formKey = GlobalKey<FormState>();
   bool isLoading = false;
   late List<Product> products = [
     Product(code: '012334968', productName: 'productName', productPrice: 9000, createdTime: getCurrentDate())
   ];
 
-  createAlertDialog(BuildContext context, scanResult){
-    TextEditingController customController = TextEditingController();
+  TextEditingController nameController = TextEditingController();
+  TextEditingController priceController = TextEditingController();
+  TextEditingController noteController = TextEditingController();
 
-    return showDialog(context: context, builder: (context){
-      return AlertDialog(
-        title: Text(
-            'Barcode: $scanResult',
-            style: TextStyle(
-              color: Colors.grey[100],
-              fontSize: 15,
-            ),
-        ),
-        backgroundColor: Colors.grey,
-        content: TextField(
-          controller: customController,
-        ),
-        actions: <Widget>[
-          MaterialButton(
+  createAlertDialog4Edit(BuildContext context, Product? product){
+      return _editProductCase(context, product!);
+  }
 
-            elevation: 5.0,
-            child: Text('Submit'),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          )
-        ],
-      );
-    });
+  createAlertDialog4New(BuildContext context, String code){
+    return _newProductCase(context, code);
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
@@ -68,23 +50,23 @@ class _HomeState extends State<Home> {
     // message was in flight, we want to discard the reply rather than calling
     // setState to update our non-existent appearance.
     if (!mounted) return;
-    createAlertDialog(context, barcodeScanRes);
-    setState(() {
-      _scanBarcode = barcodeScanRes;
-    });
+    //createAlertDialog(context, barcodeScanRes);
   }
 
-  returnString2Text() {
-    createAlertDialog(context, 123456789);
+  returnString2Text() async {
+    String barResult = '111111';
+    Product? result =  await ProductDatabase.instance.readProduct(barResult);
+    if(result == null) {
+      createAlertDialog4New(context, barResult);
+    }else{
+      createAlertDialog4Edit(context, result);
+    }
 
-    ProductDatabase.instance.create(
-      Product(code:'123456789', productName: 'CocaCola', note: '12314', productPrice: 10000,createdTime: getCurrentDate())
-    );
+
+     // ProductDatabase.instance.create(
+     //   Product(code:'111111', productName: 'Pepsi', note: '12314', productPrice: 10000,createdTime: getCurrentDate())
+     // );
     refreshProducts();
-
-    setState(() {
-      _scanBarcode = '123456789';
-    });
   }
 
   String getCurrentDate(){
@@ -121,20 +103,20 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return MaterialApp(
         home: Scaffold(
-            backgroundColor: Colors.grey[900],
+            backgroundColor: Colors.white,
             floatingActionButton: FloatingActionButton(
-              backgroundColor: Colors.amberAccent[700],
+              backgroundColor: Colors.lightGreen[700],
               // onPressed: () => scanBarcodeNormal(),
               onPressed: () => returnString2Text(),
               child: const Icon(
                 Icons.qr_code,
-                color: Colors.black,
+                color: Colors.white,
               ),
             ),
             floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
             appBar: AppBar(
                 title: const Text('Barcode scan'),
-              backgroundColor: Colors.black,
+              backgroundColor: Colors.lightGreen[700],
             ),
             body: Center(
               child: isLoading
@@ -156,6 +138,7 @@ class _HomeState extends State<Home> {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4.0),
         child: Card(
+          color: Colors.lightGreen[300],
           child: ListTile(
             onTap: () {
             },
@@ -165,4 +148,125 @@ class _HomeState extends State<Home> {
       );
     },
   );
+
+  _newProductCase(context, String scannedCode) {
+    Alert(
+        style: AlertStyle(
+            backgroundColor: Colors.white,
+            titleStyle: TextStyle(color: Colors.lightGreen[700])
+        ) ,
+        context: context,
+        title: "$scannedCode",
+        content: Column(
+          children: <Widget>[
+            TextField(
+              cursorColor: Colors.lightGreen[700],
+              decoration: InputDecoration(
+                  labelStyle: TextStyle(
+                    color: Colors.lightGreen[700],
+                  ),
+                  labelText: 'Product Name',
+                  focusedBorder:  UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.lightGreen),
+                  )
+              ),
+              controller: nameController,
+            ),
+            TextField(
+              cursorColor: Colors.lightGreen[700],
+              decoration: InputDecoration(
+                  labelStyle: TextStyle(
+                    color: Colors.lightGreen[700],
+                  ),
+                  labelText: 'Price',
+                  focusedBorder:  UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.lightGreen),
+                  )
+              ),
+              controller: priceController,
+            ),
+            TextField(
+              cursorColor: Colors.lightGreen[700],
+              decoration: InputDecoration(
+                  labelStyle: TextStyle(
+                    color: Colors.lightGreen[700],
+                  ),
+                  labelText: 'Note',
+                  fillColor: Colors.white,
+                  focusedBorder:  UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.lightGreen),
+                  )
+              ),
+              controller: noteController,
+            ),
+          ],
+        ),
+        buttons: [
+          DialogButton(
+            color: Colors.lightGreen[700],
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Save",
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
+          )
+        ]).show();
+  }
+
+  _editProductCase(context, Product product) {
+    String price = NumberFormat('#,##,000').format(product.productPrice);
+    Alert(
+        style: AlertStyle(
+            backgroundColor: Colors.white,
+            titleStyle: TextStyle(color: Colors.lightGreen[700])
+        ) ,
+        context: context,
+        title: 'Code: ${product.code}',
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Align(
+              alignment: Alignment.topLeft,
+              child:
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${product.productName}',
+                    style: TextStyle(
+                      color: Colors.lightGreen[700],
+                      fontWeight: FontWeight.bold,
+                      fontSize: 30,
+                    ),
+                  ),
+                  Text(
+                    '$price VND',
+                    style: TextStyle(
+                      color: Colors.lightGreen[700],
+                    ),
+                  ),
+                  Text(
+                    'Notes: ${product.note}',
+                    style: TextStyle(
+                      color: Colors.lightGreen[700],
+                    ),
+                  ),
+                ],
+              ),
+
+
+            ),
+          ],
+        ),
+        buttons: [
+          DialogButton(
+            color: Colors.lightGreen[700],
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "OK",
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
+          )
+        ]).show();
+  }
 }

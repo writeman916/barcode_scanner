@@ -56,14 +56,14 @@ class ProductDatabase {
     return product.copy(id: id);
   }
 
-  Future<Product?> readProduct(int id) async {
+  Future<Product?> readProduct(String code) async {
     final db = await instance.database;
 
     final maps = await db.query(
       tableProducts,
       columns: ProductFields.values,
-      where:  '${ProductFields.id} = ?',
-      whereArgs: [id],
+      where:  '${ProductFields.code} = ?',
+      whereArgs: [code],
     );
 
     if(maps.isNotEmpty) {
