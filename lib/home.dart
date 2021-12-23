@@ -16,22 +16,18 @@ class Home extends StatefulWidget{
 }
 
 class _HomeState extends State<Home> {
-  final _formKey = GlobalKey<FormState>();
+
   bool isLoading = false;
   late List<Product> products = [
     Product(code: '012334968', productName: 'productName', productPrice: 9000, createdTime: getCurrentDate())
   ];
 
-  TextEditingController nameController = TextEditingController();
-  TextEditingController priceController = TextEditingController();
-  TextEditingController noteController = TextEditingController();
-
   createAlertDialog4Edit(BuildContext context, Product? product){
-      return _editProductCase(context, product!);
+      return _existProductCase(context, product!);
   }
 
   createAlertDialog4New(BuildContext context, String code){
-    return _newProductCase(context, code);
+    return _newProductCase(context, code, true);
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
@@ -41,7 +37,7 @@ class _HomeState extends State<Home> {
     try {
       barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
           '#ff6666', 'Cancel', true, ScanMode.BARCODE);
-      print(barcodeScanRes);
+
     } on PlatformException {
       barcodeScanRes = 'Failed to get platform version.';
     }
@@ -50,7 +46,12 @@ class _HomeState extends State<Home> {
     // message was in flight, we want to discard the reply rather than calling
     // setState to update our non-existent appearance.
     if (!mounted) return;
-    //createAlertDialog(context, barcodeScanRes);
+    Product? result =  await ProductDatabase.instance.readProduct(barcodeScanRes);
+    if(result == null) {
+      createAlertDialog4New(context, barcodeScanRes);
+    }else{
+      createAlertDialog4Edit(context, result);
+    }
   }
 
   returnString2Text() async {
@@ -61,10 +62,8 @@ class _HomeState extends State<Home> {
     }else{
       createAlertDialog4Edit(context, result);
     }
-
-
      // ProductDatabase.instance.create(
-     //   Product(code:'111111', productName: 'Pepsi', note: '12314', productPrice: 10000,createdTime: getCurrentDate())
+     //   Product(code:'111112', productName: 'Pepsi', note: '12314', productPrice: 10000,createdTime: getCurrentDate())
      // );
     refreshProducts();
   }
@@ -106,7 +105,7 @@ class _HomeState extends State<Home> {
             backgroundColor: Colors.white,
             floatingActionButton: FloatingActionButton(
               backgroundColor: Colors.lightGreen[700],
-              // onPressed: () => scanBarcodeNormal(),
+              //onPressed: () => scanBarcodeNormal(),
               onPressed: () => returnString2Text(),
               child: const Icon(
                 Icons.qr_code,
@@ -115,7 +114,7 @@ class _HomeState extends State<Home> {
             ),
             floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
             appBar: AppBar(
-                title: const Text('Barcode scan'),
+              title: const Text('Barcode scan'),
               backgroundColor: Colors.lightGreen[700],
             ),
             body: Center(
@@ -135,21 +134,79 @@ class _HomeState extends State<Home> {
   Widget buildProduct() => ListView.builder(
     itemCount:  products.length,
     itemBuilder: (context, index){
+      String price = NumberFormat('#,##,000').format(products[index].productPrice);
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4.0),
+        padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 5.0),
         child: Card(
-          color: Colors.lightGreen[300],
-          child: ListTile(
-            onTap: () {
-            },
-            title: Text(products[index].productName.toString() + products[index].productPrice.toString()),
-          ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10.0),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.lightGreen,
+                  Colors.lightGreen.shade300,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${products[index].productName}: $price',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 25,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'notes: ${products[index].note}',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Spacer(),
+                  IconButton(
+                    color: Colors.white,
+                    onPressed: () {
+                      ProductDatabase.instance.delete(products[index].code);
+                      setState(() {
+                        refreshProducts();
+                      });
+                    },
+                    icon: const Icon(Icons.delete_outlined),
+                    alignment: Alignment.center,
+                  ),
+                ],
+              ),
+            ),
+          )
         ),
       );
     },
   );
 
-  _newProductCase(context, String scannedCode) {
+  _newProductCase (context, String scannedCode, bool processMode) async {
+    TextEditingController nameController = TextEditingController();
+    TextEditingController priceController = TextEditingController();
+    TextEditingController noteController = TextEditingController();
+
+    if(!processMode){
+      Product? curProduct =  await ProductDatabase.instance.readProduct(scannedCode);
+      nameController.text = curProduct!.productName;
+      priceController.text = curProduct.productPrice.toString();
+      noteController.text = curProduct.note!;
+    }
+
     Alert(
         style: AlertStyle(
             backgroundColor: Colors.white,
@@ -204,7 +261,36 @@ class _HomeState extends State<Home> {
         buttons: [
           DialogButton(
             color: Colors.lightGreen[700],
-            onPressed: () => Navigator.pop(context),
+            onPressed: () async {
+              if(!processMode){
+                int? curID = await ProductDatabase.instance.getIDbyCode(scannedCode);
+                ProductDatabase.instance.update(
+                    Product(
+                        id: curID,
+                        code:'$scannedCode',
+                        productName: nameController.text.toString(),
+                        note: noteController.text.toString(),
+                        productPrice: int.parse(priceController.text.toString()),
+                        createdTime: getCurrentDate())
+                );
+              }else{
+                ProductDatabase.instance.create(
+                    Product(
+                        code:'$scannedCode',
+                        productName: nameController.text.toString(),
+                        note: noteController.text.toString(),
+                        productPrice: int.parse(priceController.text.toString()),
+                        createdTime: getCurrentDate())
+                );
+              }
+              Navigator.of(context).pushNamedAndRemoveUntil('/', ModalRoute.withName('/'));
+              setState(() {
+                refreshProducts();
+                noteController.clear();
+                nameController.clear();
+                priceController.clear();
+              });
+            },
             child: Text(
               "Save",
               style: TextStyle(color: Colors.white, fontSize: 20),
@@ -213,7 +299,8 @@ class _HomeState extends State<Home> {
         ]).show();
   }
 
-  _editProductCase(context, Product product) {
+  _existProductCase(context, Product product) {
+
     String price = NumberFormat('#,##,000').format(product.productPrice);
     Alert(
         style: AlertStyle(
@@ -225,47 +312,43 @@ class _HomeState extends State<Home> {
         content: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Align(
-              alignment: Alignment.topLeft,
-              child:
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${product.productName}',
-                    style: TextStyle(
-                      color: Colors.lightGreen[700],
-                      fontWeight: FontWeight.bold,
-                      fontSize: 30,
-                    ),
-                  ),
-                  Text(
-                    '$price VND',
-                    style: TextStyle(
-                      color: Colors.lightGreen[700],
-                    ),
-                  ),
-                  Text(
-                    'Notes: ${product.note}',
-                    style: TextStyle(
-                      color: Colors.lightGreen[700],
-                    ),
-                  ),
-                ],
+            Text(
+            '${product.productName}: $price VND',
+            style: TextStyle(
+              color: Colors.lightGreen[700],
+              fontSize: 25,
               ),
-
-
+            ),
+            Text(
+              'note: ${product.note}',
+              style: TextStyle(
+                color: Colors.lightGreen[700],
+                fontSize: 15,
+              ),
             ),
           ],
         ),
         buttons: [
           DialogButton(
-            color: Colors.lightGreen[700],
-            onPressed: () => Navigator.pop(context),
             child: Text(
               "OK",
-              style: TextStyle(color: Colors.white, fontSize: 20),
+              style: TextStyle(color: Colors.white, fontSize: 18),
             ),
+            onPressed: () => Navigator.pop(context),
+            color: Color.fromRGBO(0, 179, 134, 1.0),
+          ),
+          DialogButton(
+            child: Text(
+              "EDIT",
+              style: TextStyle(color: Colors.white, fontSize: 18),
+            ),
+            onPressed: () {
+              _newProductCase(context, product.code, false);
+            },
+            gradient: LinearGradient(colors: [
+              Color.fromRGBO(0, 179, 134, 1.0),
+              Color.fromRGBO(52, 138, 199, 1.0),
+            ]),
           )
         ]).show();
   }

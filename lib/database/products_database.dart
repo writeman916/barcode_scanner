@@ -73,6 +73,23 @@ class ProductDatabase {
     }
   }
 
+  Future<int?> getIDbyCode(String code) async {
+    final db = await instance.database;
+
+    final maps = await db.query(
+      tableProducts,
+      columns: ProductFields.values,
+      where:  '${ProductFields.code} = ?',
+      whereArgs: [code],
+    );
+
+    if(maps.isNotEmpty) {
+      return Product.fromJson(maps.first).id;
+    } else {
+      return null;
+    }
+  }
+
   Future<List<Product>> readAllProducts() async {
     final db = await instance.database;
 
@@ -88,18 +105,18 @@ class ProductDatabase {
     return db.update(
       tableProducts,
       product.toJson(),
-      where:  '$ProductFields.id} = ?',
-      whereArgs: [product.id],
+      where:  '${ProductFields.code} = ?',
+      whereArgs: [product.code],
     );
   }
 
-  Future<int> delete(int id) async {
+  Future<int> delete(String code) async {
     final db = await instance.database;
 
     return db.delete(
       tableProducts,
-      where:  '$ProductFields.id} = ?',
-      whereArgs: [id],
+      where:  '${ProductFields.code} = ?',
+      whereArgs: [code],
     );
   }
 
