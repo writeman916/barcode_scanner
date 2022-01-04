@@ -17,18 +17,12 @@ class Home extends StatefulWidget{
 
 class _HomeState extends State<Home> {
 
+  Color headerColor = Color(0xFF141524);
+  Color textColor = Colors.black54;
+  Color deleteColor = Colors.grey;
   bool isLoading = false;
-  late List<Product> products = [
-    Product(code: '012334968', productName: 'productName', productPrice: 9000, createdTime: getCurrentDate())
-  ];
-
-  createAlertDialog4Edit(BuildContext context, Product? product){
-      return _existProductCase(context, product!);
-  }
-
-  createAlertDialog4New(BuildContext context, String code){
-    return _newProductCase(context, code, true);
-  }
+  bool isEnableDelete = false;
+  late List<Product> products = [];
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> scanBarcodeNormal() async {
@@ -48,23 +42,23 @@ class _HomeState extends State<Home> {
     if (!mounted) return;
     Product? result =  await ProductDatabase.instance.readProduct(barcodeScanRes);
     if(result == null) {
-      createAlertDialog4New(context, barcodeScanRes);
+      _newProductCase(context, barcodeScanRes, true);
     }else{
-      createAlertDialog4Edit(context, result);
+      _existProductCase(context, result);
     }
   }
 
   returnString2Text() async {
-    String barResult = '111111';
+    String barResult = '891234556786456';
     Product? result =  await ProductDatabase.instance.readProduct(barResult);
     if(result == null) {
-      createAlertDialog4New(context, barResult);
+      _newProductCase(context, barResult, true);
     }else{
-      createAlertDialog4Edit(context, result);
+      _existProductCase(context, result);
     }
-     // ProductDatabase.instance.create(
-     //   Product(code:'111112', productName: 'Pepsi', note: '12314', productPrice: 10000,createdTime: getCurrentDate())
-     // );
+    // ProductDatabase.instance.create(
+    //     Product(code:'89123455678', productName: 'Tên qua dài giờ phải làm sao aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', note: '12314', productPrice: 10000,createdTime: getCurrentDate())
+    // );
     refreshProducts();
   }
 
@@ -104,7 +98,7 @@ class _HomeState extends State<Home> {
         home: Scaffold(
             backgroundColor: Colors.white,
             floatingActionButton: FloatingActionButton(
-              backgroundColor: Colors.lightGreen[700],
+              backgroundColor: headerColor,
               //onPressed: () => scanBarcodeNormal(),
               onPressed: () => returnString2Text(),
               child: const Icon(
@@ -114,15 +108,30 @@ class _HomeState extends State<Home> {
             ),
             floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
             appBar: AppBar(
-              title: const Text('Barcode scan'),
-              backgroundColor: Colors.lightGreen[700],
+              centerTitle: true,
+              shadowColor: Colors.grey[700],
+              title: const Text('Barcode scan', style: TextStyle(fontFamily: 'VNCOOP',color: Color(0xFF141524)),),
+              backgroundColor: Colors.white,
+              actions: [
+                FlatButton(onPressed: () {
+                  setState(() {
+                    isEnableDelete = !isEnableDelete;
+                    isEnableDelete ? deleteColor = Colors.black : deleteColor = Colors.grey;
+                  });
+                },
+                    child: Icon(
+                      Icons.delete_sweep_outlined,
+                      size: 32,
+                      color: deleteColor,)
+                )
+              ],
             ),
             body: Center(
               child: isLoading
-                  ? CircularProgressIndicator()
+                  ? CircularProgressIndicator(color: Colors.black54,)
                   : products.isEmpty
                   ? Text(
-                'No Notes',
+                'Empty',
                 style: TextStyle(color: Colors.white, fontSize: 24),
               )
                   : buildProduct(),
@@ -134,62 +143,87 @@ class _HomeState extends State<Home> {
   Widget buildProduct() => ListView.builder(
     itemCount:  products.length,
     itemBuilder: (context, index){
-      String price = NumberFormat('#,##,000').format(products[index].productPrice);
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 5.0),
-        child: Card(
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10.0),
-              gradient: LinearGradient(
-                colors: [
-                  Colors.lightGreen,
-                  Colors.lightGreen.shade300,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  Column(
+      String price = NumberFormat('###,###,000').format(products[index].productPrice);
+      return Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            new BoxShadow(
+              color: Colors.grey,
+              blurRadius: 10.0,
+              spreadRadius: -9.0,
+              offset: Offset(
+                1.0,
+                1.0,
+              )
+            )
+          ],
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Stack(
+          alignment: const Alignment(0.93,-1.3),
+          children:[
+            Card(
+              margin: EdgeInsets.all(10.0),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: SizedBox(
+                  width: 330,
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${products[index].productName}: $price',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 25,
-                          fontWeight: FontWeight.bold,
+                      FittedBox(
+                        child:
+                        Text(
+                          '${products[index].productName}',
+                          maxLines: 1,
+                          style: TextStyle(
+                            color: headerColor,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'segoesc',
+                          ),
                         ),
                       ),
-                      Text(
-                        'notes: ${products[index].note}',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                        ),
-                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          SizedBox(
+                            width: 200,
+                            child: Text(
+                              '${products[index].note}',
+                              maxLines: 2,
+                              overflow: TextOverflow.clip,
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: 12,
+                                fontFamily: 'segoesc',
+                              ),
+                            ),
+                          ),
+                          Text(
+                            '$price VNĐ',
+                            style: TextStyle(
+                              color: headerColor,
+                              fontSize: 15,
+                              fontFamily: 'segoesc',
+                            ),
+                          ),
+                        ],
+                      )
                     ],
-                  ),
-                  Spacer(),
-                  IconButton(
-                    color: Colors.white,
-                    onPressed: () {
-                      ProductDatabase.instance.delete(products[index].code);
-                      setState(() {
-                        refreshProducts();
-                      });
-                    },
-                    icon: const Icon(Icons.delete_outlined),
-                    alignment: Alignment.center,
-                  ),
-                ],
+                ),
               ),
             ),
-          )
+          ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return ScaleTransition(scale: animation, child: child);
+              },
+              child: isEnableDelete ? IconButton(onPressed: (){_confirm2Delete(products[index].code);},
+                  icon: new Icon(Icons.cancel, size: 30)) : Spacer(),
+              ),
+          ],
         ),
       );
     },
@@ -210,48 +244,61 @@ class _HomeState extends State<Home> {
     Alert(
         style: AlertStyle(
             backgroundColor: Colors.white,
-            titleStyle: TextStyle(color: Colors.lightGreen[700])
+            titleStyle: TextStyle(color: headerColor,fontFamily: 'segoesc', fontSize: 25)
         ) ,
         context: context,
         title: "$scannedCode",
         content: Column(
           children: <Widget>[
             TextField(
-              cursorColor: Colors.lightGreen[700],
+              cursorColor: headerColor,
+              style: TextStyle(color: headerColor),
               decoration: InputDecoration(
                   labelStyle: TextStyle(
-                    color: Colors.lightGreen[700],
+                    color: textColor,
+                      fontSize: 15,
+                      fontFamily: 'segoesc'
                   ),
                   labelText: 'Product Name',
                   focusedBorder:  UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.lightGreen),
+                    borderSide: BorderSide(color: Colors.black54),
                   )
               ),
               controller: nameController,
             ),
             TextField(
-              cursorColor: Colors.lightGreen[700],
+              cursorColor: headerColor,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              style: TextStyle(color: headerColor),
               decoration: InputDecoration(
                   labelStyle: TextStyle(
-                    color: Colors.lightGreen[700],
+                    fontSize: 15,
+                    color: textColor,
+                      fontFamily: 'segoesc'
                   ),
                   labelText: 'Price',
                   focusedBorder:  UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.lightGreen),
+                    borderSide: BorderSide(color: Colors.black54),
                   )
               ),
               controller: priceController,
             ),
             TextField(
-              cursorColor: Colors.lightGreen[700],
+              cursorColor: headerColor,
+              style: TextStyle(color: headerColor),
               decoration: InputDecoration(
                   labelStyle: TextStyle(
-                    color: Colors.lightGreen[700],
+                    fontSize: 15,
+                    color: textColor,
+                      fontFamily: 'segoesc'
                   ),
                   labelText: 'Note',
                   fillColor: Colors.white,
                   focusedBorder:  UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.lightGreen),
+                    borderSide: BorderSide(color: Colors.black54),
                   )
               ),
               controller: noteController,
@@ -260,7 +307,7 @@ class _HomeState extends State<Home> {
         ),
         buttons: [
           DialogButton(
-            color: Colors.lightGreen[700],
+            color: headerColor,
             onPressed: () async {
               if(!processMode){
                 int? curID = await ProductDatabase.instance.getIDbyCode(scannedCode);
@@ -293,7 +340,7 @@ class _HomeState extends State<Home> {
             },
             child: Text(
               "Save",
-              style: TextStyle(color: Colors.white, fontSize: 20),
+              style: TextStyle(color: Colors.white, fontSize: 20, fontFamily: 'segoesc'),
             ),
           )
         ]).show();
@@ -301,55 +348,99 @@ class _HomeState extends State<Home> {
 
   _existProductCase(context, Product product) {
 
-    String price = NumberFormat('#,##,000').format(product.productPrice);
+    String price = NumberFormat('###,###,000').format(product.productPrice);
     Alert(
         style: AlertStyle(
             backgroundColor: Colors.white,
-            titleStyle: TextStyle(color: Colors.lightGreen[700])
+            titleStyle: TextStyle(color: headerColor, fontFamily: 'segoesc',fontWeight: FontWeight.bold, fontSize: 35,)
         ) ,
         context: context,
-        title: 'Code: ${product.code}',
-        content: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-            '${product.productName}: $price VND',
-            style: TextStyle(
-              color: Colors.lightGreen[700],
-              fontSize: 25,
+        title: '${product.code}',
+        content: SizedBox(
+          width: 300,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              FittedBox(
+                child: Text(
+                '${product.productName}',
+                style: TextStyle(
+                  color: headerColor,
+                  fontSize: 30,
+                  fontFamily: 'segoesc',
+                  fontWeight: FontWeight.bold
+                  ),
+                ),
               ),
-            ),
-            Text(
-              'note: ${product.note}',
-              style: TextStyle(
-                color: Colors.lightGreen[700],
-                fontSize: 15,
+              Text(
+                '$price VNĐ',
+                style: TextStyle(
+                    color: textColor,
+                    fontSize: 17,
+                    fontFamily: 'segoesc'
+                ),
               ),
-            ),
-          ],
+              Text(
+                'note: ${product.note}',
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 12,
+                  fontFamily: 'segoesc'
+                ),
+              ),
+            ],
+          ),
         ),
         buttons: [
           DialogButton(
             child: Text(
               "OK",
-              style: TextStyle(color: Colors.white, fontSize: 18),
+              style: TextStyle(color: headerColor, fontSize: 18,fontFamily: 'segoesc'),
             ),
             onPressed: () => Navigator.pop(context),
-            color: Color.fromRGBO(0, 179, 134, 1.0),
+            color: Colors.white,
+            splashColor: Colors.grey,
           ),
           DialogButton(
             child: Text(
               "EDIT",
-              style: TextStyle(color: Colors.white, fontSize: 18),
+              style: TextStyle(color: headerColor, fontSize: 18,fontFamily: 'segoesc'),
             ),
             onPressed: () {
               _newProductCase(context, product.code, false);
             },
-            gradient: LinearGradient(colors: [
-              Color.fromRGBO(0, 179, 134, 1.0),
-              Color.fromRGBO(52, 138, 199, 1.0),
-            ]),
+            color: Colors.white,
+            splashColor: Colors.grey,
           )
         ]).show();
+  }
+
+  _confirm2Delete(String productCode) async {
+    await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Do you want to Delete it?"),
+          actions: <Widget>[
+            FlatButton(
+              child: Text("Yes"),
+              onPressed: () {
+                ProductDatabase.instance.delete(productCode);
+                setState(() {
+                  refreshProducts();
+                });
+                Navigator.pop(context, true);
+              },
+            ),
+            FlatButton(
+              child: Text("Cancel"),
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }
